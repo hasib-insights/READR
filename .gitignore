@@ -1,0 +1,25 @@
+# Built artifacts
+build/
+app/build/
+
+# IDE
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Local machine configuration
+local.properties
+keystore.properties
+local.env
+
+# Signing material – never commit keys
+*.jks
+*.keystore
+keystore/
+release-keystore/
+
+# OS noise
+.DS_Store
+Thumbs.db

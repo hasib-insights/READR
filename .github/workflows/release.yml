@@ -1,0 +1,87 @@
+name: Release
+
+# Builds the signed release APK, computes its SHA-256 checksum and publishes
+# a GitHub Release with the asset named READR.apk whenever a version tag
+# (v*) is pushed. Tag releases manually: git tag v1.0.0 && git push origin v1.0.0
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run unit tests
+        run: ./gradlew :app:testDebugUnitTest --console=plain
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare release signing (secrets optional)
+        env:
+          READR_KEYSTORE_B64: ${{ secrets.READR_KEYSTORE_B64 }}
+          READR_KEYSTORE_PASSWORD: ${{ secrets.READR_KEYSTORE_PASSWORD }}
+          READR_KEY_ALIAS: ${{ secrets.READR_KEY_ALIAS }}
+        run: |
+          if [ -n "$READR_KEYSTORE_B64" ]; then
+            echo "Using provided release keystore from secrets."
+            echo "$READR_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/readr-release.jks"
+            echo "READR_KEYSTORE_PATH=$RUNNER_TEMP/readr-release.jks" >> "$GITHUB_ENV"
+            echo "READR_KEYSTORE_PASSWORD=$READR_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "READR_KEY_ALIAS=${READR_KEY_ALIAS:-readr}" >> "$GITHUB_ENV"
+          else
+            echo "No signing secrets configured; generating an ephemeral CI keystore."
+            echo "WARNING: rebuild future releases with your own keystore for update compatibility."
+            keytool -genkeypair -v -keystore "$RUNNER_TEMP/readr-release.jks" -alias readr \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass readr-ci-ephemeral -keypass readr-ci-ephemeral \
+              -dname "CN=READR Release, OU=READR, O=READR, L=CI, S=CI, C=US"
+            echo "READR_KEYSTORE_PATH=$RUNNER_TEMP/readr-release.jks" >> "$GITHUB_ENV"
+            echo "READR_KEYSTORE_PASSWORD=readr-ci-ephemeral" >> "$GITHUB_ENV"
+            echo "READR_KEY_ALIAS=readr" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build release APK
+        run: ./gradlew :app:assembleRelease --console=plain
+
+      - name: Rename APK and compute checksum
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk READR.apk
+          sha256sum READR.apk > READR.apk.sha256
+          echo "APK size: $(du -h READR.apk | cut -f1)"
+
+      - name: Verify APK signature
+        run: |
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/35.0.0"
+          "$BUILD_TOOLS/apksigner" verify --print-certs READR.apk
+
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          name: READR ${{ github.ref_name }}
+          body_path: docs/RELEASE_NOTES.md
+          files: |
+            READR.apk
+            READR.apk.sha256
