@@ -33,7 +33,7 @@ device.
 
 ## Download READR
 
-<!-- DOWNLOAD_SECTION_BEGIN
+
 ### Latest Android version
 
 [Download READR APK](https://github.com/hasib-insights/READR/releases/latest/download/READR.apk)
@@ -41,7 +41,7 @@ device.
 [View all releases](https://github.com/hasib-insights/READR/releases/latest)
 
 Current version: **1.0.0** · Requires Android 7.0 (API 24) or newer.
-DOWNLOAD_SECTION_END -->
+
 
 > The download links above are activated automatically by the release
 > workflow as soon as the first signed APK is published to GitHub Releases
