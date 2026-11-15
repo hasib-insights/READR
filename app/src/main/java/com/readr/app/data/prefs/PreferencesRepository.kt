@@ -24,8 +24,6 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore by preferencesDataStore(name = "readr_prefs")
 
-private typealias Preferences = androidx.datastore.preferences.core.Preferences
-
 /**
  * DataStore-backed preferences. Defaults encode the product requirement that
  * READR opens with Warm Cream Paper and a subtle LOW-intensity paper grain.
@@ -55,7 +53,7 @@ class PreferencesRepository(private val context: Context) {
     }
 
     private inline fun <reified E : Enum<E>> Preferences.getEnum(
-        key: Preferences.Key<String>,
+        key: androidx.datastore.preferences.core.Preferences.Key<String>,
         fallback: E,
     ): E = this[key]?.let { name -> runCatching { enumValueOf<E>(name) }.getOrNull() } ?: fallback
 
@@ -108,3 +106,5 @@ class PreferencesRepository(private val context: Context) {
         context.dataStore.edit(block)
     }
 }
+
+private typealias Preferences = androidx.datastore.preferences.core.Preferences
