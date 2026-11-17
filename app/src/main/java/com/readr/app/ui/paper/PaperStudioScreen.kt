@@ -115,7 +115,7 @@ fun PaperStudioScreen() {
         PaperGrid(
             selected = prefs.paperTheme,
             intensity = prefs.textureIntensity,
-            onSelect = { update { prefsRepo.setPaperTheme(it) } },
+            onSelect = { update { prefsRepo.applyPaperTheme(it) } },
         )
 
         Text(

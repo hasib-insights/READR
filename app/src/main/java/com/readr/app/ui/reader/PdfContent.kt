@@ -3,8 +3,8 @@ package com.readr.app.ui.reader
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,10 +16,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,10 +49,15 @@ private fun darkFilter(): ColorFilter = ColorFilter.colorMatrix(
     )
 )
 
+/** Zoom bounds shared by pinch gestures, the toolbar buttons and double-tap. */
+internal const val PDF_MIN_ZOOM = 1f
+internal const val PDF_MAX_ZOOM = 5f
+
 /**
  * PDF reading surface: framework PdfRenderer page by page in a pager, with
- * double-tap zoom, zoom buttons, pan while zoomed, and an optional dark
- * rendering filter. The original PDF appearance is preserved by default.
+ * pinch zoom in AND out, double-tap zoom, zoom buttons, pan while zoomed, and
+ * an optional dark rendering filter. The original PDF appearance is preserved
+ * by default.
  */
 @Composable
 fun PdfContent(
@@ -60,7 +65,7 @@ fun PdfContent(
     content: ReaderContent.Pdf,
     prefs: ReadingPrefs,
     pagerState: PagerState,
-    zoom: State<Float>,
+    zoom: MutableState<Float>,
     onTap: () -> Unit,
     onZoomAnchor: (Offset) -> Unit,
 ) {
@@ -82,10 +87,27 @@ fun PdfContent(
             (viewportHpx * aspect * 1.5f).toInt().coerceIn(600, 2000)
         }
 
+        // Keep pan valid for every zoom change (buttons, double-tap, pinch):
+        // zooming out re-clamps the offset and fully zoomed out snaps the page
+        // back into place so the pager takes over cleanly again.
+        LaunchedEffect(zoom.value) {
+            val z = zoom.value
+            if (z <= PDF_MIN_ZOOM + 0.02f) {
+                pan.value = Offset.Zero
+            } else {
+                val maxX = viewportWpx * (z - 1f) / 2f
+                val maxY = viewportHpx * (z - 1f) / 2f
+                pan.value = Offset(
+                    pan.value.x.coerceIn(-maxX, maxX),
+                    pan.value.y.coerceIn(-maxY, maxY),
+                )
+            }
+        }
+
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize(),
-            userScrollEnabled = zoom.value <= 1.02f,
+            userScrollEnabled = zoom.value <= PDF_MIN_ZOOM + 0.02f,
             pageSpacing = 12.dp,
             key = { it },
         ) { page ->
@@ -94,19 +116,10 @@ fun PdfContent(
                 page = page,
                 targetWidth = targetWidth,
                 dark = prefs.pdfDarkFilter,
-                scale = zoom.value,
-                pan = pan.value,
+                zoom = zoom,
+                pan = pan,
                 onTap = onTap,
                 onDoubleTap = onZoomAnchor,
-                onPan = { delta ->
-                    val s = zoom.value
-                    val maxX = viewportWpx * (s - 1f) / 2f
-                    val maxY = viewportHpx * (s - 1f) / 2f
-                    pan.value = Offset(
-                        (pan.value.x + delta.x).coerceIn(-maxX, maxX),
-                        (pan.value.y + delta.y).coerceIn(-maxY, maxY),
-                    )
-                },
             )
         }
     }
@@ -118,11 +131,10 @@ private fun PdfPageView(
     page: Int,
     targetWidth: Int,
     dark: Boolean,
-    scale: Float,
-    pan: Offset,
+    zoom: MutableState<Float>,
+    pan: MutableState<Offset>,
     onTap: () -> Unit,
     onDoubleTap: (Offset) -> Unit,
-    onPan: (Offset) -> Unit,
 ) {
     var bitmap by remember(page, targetWidth) { mutableStateOf<Bitmap?>(null) }
     var failed by remember(page) { mutableStateOf(false) }
@@ -138,17 +150,44 @@ private fun PdfPageView(
         Modifier
             .fillMaxSize()
             .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                translationX = pan.x
-                translationY = pan.y
+                scaleX = zoom.value
+                scaleY = zoom.value
+                translationX = pan.value.x
+                translationY = pan.value.y
             }
-            .pointerInput(scale) {
-                if (scale > 1.02f) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        onPan(dragAmount)
+            .pointerInput(Unit) {
+                // Pinch zoom in AND out + pan, anchored on the pinch centroid.
+                // Zoom and pan are live MutableState so rapid gesture events
+                // never build on stale values.
+                detectTransformGestures(panZoomLock = false) { centroid, gesturePan, gestureZoom, _ ->
+                    val oldScale = zoom.value
+                    val newScale = (oldScale * gestureZoom).coerceIn(PDF_MIN_ZOOM, PDF_MAX_ZOOM)
+
+                    // Fully zoomed out: reset exactly, so scrolling and page
+                    // navigation resume without a stuck offset.
+                    if (newScale <= PDF_MIN_ZOOM + 0.02f) {
+                        zoom.value = PDF_MIN_ZOOM
+                        pan.value = Offset.Zero
+                        return@detectTransformGestures
                     }
+
+                    // 1. Finger drag in screen space.
+                    var newPan = pan.value + gesturePan
+
+                    // 2. Re-anchor the zoom around the pinch centroid so the
+                    //    content under the fingers stays under the fingers.
+                    val ratio = newScale / oldScale
+                    val anchor = centroid - Offset(size.width / 2f, size.height / 2f)
+                    newPan = anchor * (1f - ratio) + newPan * ratio
+
+                    // 3. Keep the page covering the viewport while zoomed.
+                    val maxX = size.width * (newScale - 1f) / 2f
+                    val maxY = size.height * (newScale - 1f) / 2f
+                    pan.value = Offset(
+                        newPan.x.coerceIn(-maxX, maxX),
+                        newPan.y.coerceIn(-maxY, maxY),
+                    )
+                    zoom.value = newScale
                 }
             }
             .pointerInput(Unit) {

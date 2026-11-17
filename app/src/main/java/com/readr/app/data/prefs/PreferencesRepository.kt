@@ -85,6 +85,18 @@ class PreferencesRepository(private val context: Context) {
     }
 
     suspend fun setPaperTheme(value: PaperTheme) = edit { it[Keys.paperTheme] = value.name }
+
+    /**
+     * Selects a paper theme and clears any Eye Comfort custom colours in the
+     * same atomic edit. Without this, a previously chosen custom colour would
+     * silently override the tapped paper and the selection would look dead.
+     */
+    suspend fun applyPaperTheme(value: PaperTheme) = edit {
+        it[Keys.paperTheme] = value.name
+        it[Keys.customBackground] = -1L
+        it[Keys.customText] = -1L
+    }
+
     suspend fun setTextureIntensity(value: TextureIntensity) = edit { it[Keys.textureIntensity] = value.name }
     suspend fun setFontSize(value: Int) = edit { it[Keys.fontSize] = value }
     suspend fun setFont(value: ReaderFont) = edit { it[Keys.font] = value.name }

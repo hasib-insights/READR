@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.provider.Settings
 import android.view.WindowManager
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -124,6 +125,14 @@ private fun ReaderReady(
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var showChapters by rememberSaveable { mutableStateOf(false) }
 
+    // System back closes the reader's own panels first (the sheets handle it
+    // too; this is the safety net that keeps back predictable) and only then
+    // lets the NavHost pop the reader.
+    BackHandler(enabled = showSettings || showChapters) {
+        showSettings = false
+        showChapters = false
+    }
+
     val isPdf = content is ReaderContent.Pdf
     val paperBg = Color(prefs.customBackground ?: prefs.paperTheme.bg)
     val paperText = Color(prefs.customTextColor ?: prefs.paperTheme.text)
@@ -223,6 +232,16 @@ private fun ReaderReady(
                     .background(Color(0x26FFB84D))
             )
         }
+
+        // ---- edge brightness gesture ----
+        // Composed BELOW the chrome (and inset past both chrome strips) so it
+        // can never swallow taps on the back button or the bottom controls.
+        BrightnessGestureZone(
+            prefs = prefs,
+            onAdjust = applyBrightness,
+            current = { brightness },
+            modifier = Modifier.align(Alignment.CenterStart),
+        )
 
         // ---- top chrome ----
         AnimatedVisibility(
@@ -407,14 +426,6 @@ private fun ReaderReady(
                 }
             }
         }
-
-        // ---- edge brightness gesture ----
-        BrightnessGestureZone(
-            prefs = prefs,
-            onAdjust = applyBrightness,
-            current = { brightness },
-            modifier = Modifier.align(Alignment.CenterStart),
-        )
     }
 
     if (showSettings) {
@@ -458,6 +469,9 @@ private fun BrightnessGestureZone(
         modifier
             .fillMaxHeight()
             .width(48.dp)
+            // Stay clear of the top chrome (status bar + bar) and the bottom
+            // chrome so the brightness drag never starts on a control.
+            .padding(top = 104.dp, bottom = 132.dp)
             .pointerInput(prefs.brightnessGestureEnabled, prefs.gestureSensitivity) {
                 if (!prefs.brightnessGestureEnabled) return@pointerInput
                 detectVerticalDragGestures(

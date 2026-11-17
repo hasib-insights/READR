@@ -1,3 +1,44 @@
+# READR 1.0.1 — bug-fix release
+
+Three fixes, no new features and no design changes:
+
+## Back button fixed
+- The left-edge brightness gesture no longer sits on top of the reader's back
+  button, so the in-app back arrow responds reliably again.
+- System back now closes the reader's settings/chapter panels first, then
+  returns to the previous screen as before.
+- On the home screen, back closes the search panel if it is open; otherwise a
+  second press within two seconds exits — a stray press never drops you out
+  of the app unexpectedly.
+
+## Page colour selection fixed
+- Previously, a custom page colour chosen in Eye Comfort silently overrode
+  every later paper selection, so tapping papers in the Reading Room or Paper
+  Studio appeared to do nothing. Selecting a paper now always applies that
+  colour immediately (and clears the older custom colour), across pages and
+  sessions.
+- When you pick a custom page colour whose paper is too dark or too light for
+  the current text, READR automatically picks the readable text colour from
+  the palette (WCAG contrast ≥ 3:1), so the page stays legible.
+
+## PDF zoom-out fixed
+- PDFs now support real pinch-to-zoom in AND out (before, only double-tap and
+  the toolbar buttons worked).
+- Zooming fully out snaps the page back to fit-width and smoothly re-enables
+  page scrolling — previously the page could stay stuck in a shifted position.
+- Pinch zoom is anchored between your fingers, the page can never be dragged
+  out of the viewport while zoomed, and page navigation via swipe or the page
+  slider keeps working.
+
+## Files
+
+- `READR.apk` — signed release APK (Android 7.0+). **Note:** this build is
+  signed with a new release key (the original keystore was lost in a build
+  machine reset), so updating from 1.0.0 requires uninstalling 1.0.0 first.
+- `READR.apk.sha256` — checksum to verify your download
+
+---
+
 # READR 1.0.0 — first public release
 
 READR is a beautiful, lightweight, offline-first e-book and document reader

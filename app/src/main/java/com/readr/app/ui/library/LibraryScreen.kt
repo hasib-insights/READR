@@ -1,5 +1,11 @@
 package com.readr.app.ui.library
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.os.SystemClock
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -61,6 +67,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -111,6 +118,29 @@ fun LibraryScreen(
     val snackbar = remember { SnackbarHostState() }
     var showSearch by remember { mutableStateOf(false) }
     var removeTarget by remember { mutableStateOf<ReadrDocument?>(null) }
+
+    // System back on the home screen: close the search panel first; menus and
+    // dialogs handle back themselves. Only a second press within two seconds
+    // exits, so a stray back press never drops the user out of the app.
+    val context = LocalContext.current
+    var lastBackAt by remember { mutableStateOf(0L) }
+    BackHandler {
+        when {
+            showSearch -> {
+                showSearch = false
+                vm.setQuery("")
+            }
+            else -> {
+                val now = SystemClock.elapsedRealtime()
+                if (now - lastBackAt < 2000L) {
+                    context.findActivity()?.finish()
+                } else {
+                    lastBackAt = now
+                    Toast.makeText(context, "Press back again to exit READR", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     val importLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
@@ -623,4 +653,13 @@ private fun CardMenu(
             )
         }
     }
+}
+
+private fun Context.findActivity(): Activity? {
+    var ctx = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
 }

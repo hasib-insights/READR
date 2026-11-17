@@ -48,22 +48,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readr.app.di.AppContainer
+import com.readr.app.domain.model.EYE_COMFORT_BACKGROUNDS
+import com.readr.app.domain.model.EYE_COMFORT_TEXT_COLORS
 import com.readr.app.domain.model.PaperTheme
 import com.readr.app.domain.model.ReaderFont
 import com.readr.app.domain.model.ReadingPrefs
+import com.readr.app.domain.model.readableTextColor
 import com.readr.app.ui.components.PaperSurface
 import com.readr.app.ui.reader.fontFamilyOf
 import kotlinx.coroutines.launch
 
-private val customBackgrounds = listOf(
-    0xFFFAF3E3L, 0xFFFEFEFCL, 0xFFF6E7C8L, 0xFFEFDFBBL, 0xFFE9E6D9L, 0xFFE8E8E4L,
-    0xFFE7EFE2L, 0xFFF6E3E0L, 0xFFE3EDF3L, 0xFFE6F0E6L, 0xFFECE8F3L, 0xFF201E1AL,
-)
-
-private val customTextColors = listOf(
-    0xFF3A3128L, 0xFF5B4632L, 0xFF1C1B18L, 0xFF4E4E46L, 0xFF2F4030L,
-    0xFFD8CFBCL, 0xFFC9BBA9L, 0xFF5C4E6EL,
-)
+private val customBackgrounds = EYE_COMFORT_BACKGROUNDS
+private val customTextColors = EYE_COMFORT_TEXT_COLORS
 
 /**
  * Eye Comfort: warm/dark modes, custom page and text colours, typography and
@@ -153,12 +149,12 @@ fun EyeComfortScreen() {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 6.dp)) {
             FilterChip(
                 selected = prefs.paperTheme == PaperTheme.DARK,
-                onClick = { update { prefsRepo.setPaperTheme(PaperTheme.DARK) } },
+                onClick = { update { prefsRepo.applyPaperTheme(PaperTheme.DARK) } },
                 label = { Text("Dark Reading Mode") },
             )
             FilterChip(
-                selected = prefs.paperTheme == PaperTheme.WARM_CREAM,
-                onClick = { update { prefsRepo.setPaperTheme(PaperTheme.WARM_CREAM) } },
+                selected = prefs.paperTheme == PaperTheme.WARM_CREAM && prefs.customBackground == null,
+                onClick = { update { prefsRepo.applyPaperTheme(PaperTheme.WARM_CREAM) } },
                 label = { Text("Warm Cream") },
             )
         }
@@ -183,7 +179,18 @@ fun EyeComfortScreen() {
                             if (selected) MaterialTheme.colorScheme.primary else Color(0x33000000),
                             RoundedCornerShape(10.dp),
                         )
-                        .clickable { update { prefsRepo.setCustomBackground(c) } }
+                        .clickable {
+                            update {
+                                prefsRepo.setCustomBackground(c)
+                                // Keep the page readable: if the current text would
+                                // wash out on this colour, pick the best-contrast
+                                // palette text colour for it.
+                                val text = prefs.customTextColor ?: prefs.paperTheme.text
+                                readableTextColor(c, text, customTextColors)?.let {
+                                    prefsRepo.setCustomTextColor(it)
+                                }
+                            }
+                        }
                 )
             }
         }

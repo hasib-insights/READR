@@ -27,3 +27,6 @@ Thumbs.db
 # Project-local Gradle state
 .gradle/
 kotlin-js-store/
+
+# Kotlin build state
+.kotlin/

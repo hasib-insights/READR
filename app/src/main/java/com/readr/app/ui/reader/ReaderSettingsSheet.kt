@@ -60,7 +60,7 @@ fun ReaderSettingsSheet(
                 PaperGrid(
                     selected = prefs.paperTheme,
                     intensity = prefs.textureIntensity,
-                    onSelect = { theme -> update { vm.prefsRepo.setPaperTheme(theme) } },
+                    onSelect = { theme -> update { vm.prefsRepo.applyPaperTheme(theme) } },
                 )
                 Spacer(Modifier.height(12.dp))
                 SheetLabel("Texture intensity")
