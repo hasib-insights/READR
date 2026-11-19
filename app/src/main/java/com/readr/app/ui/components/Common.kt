@@ -2,6 +2,7 @@ package com.readr.app.ui.components
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +35,8 @@ import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.translate
@@ -93,6 +96,8 @@ fun DrawScope.drawGrain(bitmap: ImageBitmap, alpha: Float) {
 /**
  * The reading page itself: paper colour + subtle grain texture behind the
  * text (the texture is drawn first, so text always stays on top).
+ * When [onClick] is provided (theme pickers) the paper is tappable and the
+ * tap ripple is drawn above the paper grain.
  */
 @Composable
 fun PaperSurface(
@@ -100,13 +105,17 @@ fun PaperSurface(
     textColor: Color,
     intensity: TextureIntensity,
     modifier: Modifier = Modifier,
+    shape: Shape = RectangleShape,
+    onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val grain = rememberGrainBitmap()
+    val paper = modifier
+        .clip(shape)
+        .background(backgroundColor)
+        .drawBehind { drawGrain(grain, intensity.alpha) }
     Box(
-        modifier
-            .background(backgroundColor)
-            .drawBehind { drawGrain(grain, intensity.alpha) }
+        if (onClick != null) paper.clickable(onClick = onClick) else paper
     ) {
         content()
     }
@@ -120,8 +129,17 @@ fun MiniPaperPreview(
     intensity: TextureIntensity,
     modifier: Modifier = Modifier,
     sample: String = "Aa",
+    shape: Shape = RectangleShape,
+    onClick: (() -> Unit)? = null,
 ) {
-    PaperSurface(backgroundColor, textColor, intensity, modifier) {
+    PaperSurface(
+        backgroundColor = backgroundColor,
+        textColor = textColor,
+        intensity = intensity,
+        modifier = modifier,
+        shape = shape,
+        onClick = onClick,
+    ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             Text(
                 sample,

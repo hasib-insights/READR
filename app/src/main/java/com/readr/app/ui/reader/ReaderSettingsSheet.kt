@@ -2,11 +2,13 @@ package com.readr.app.ui.reader
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -196,19 +198,30 @@ private fun PaperGrid(
                         Modifier.weight(1f),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        MiniPaperPreview(
-                            backgroundColor = Color(theme.bg),
-                            textColor = Color(theme.text),
-                            intensity = intensity,
-                            modifier = Modifier
+                        Box(
+                            Modifier
                                 .fillMaxWidth()
                                 .height(64.dp)
-                                .border(
-                                    if (selected == theme) 2.dp else 1.dp,
-                                    if (selected == theme) SageBorder else Color.Transparent,
-                                    RoundedCornerShape(10.dp),
-                                ),
-                        )
+                        ) {
+                            MiniPaperPreview(
+                                backgroundColor = Color(theme.bg),
+                                textColor = Color(theme.text),
+                                intensity = intensity,
+                                modifier = Modifier.fillMaxSize(),
+                                shape = RoundedCornerShape(10.dp),
+                                onClick = { onSelect(theme) },
+                            )
+                            // selection outline drawn above the paper so it stays visible
+                            Box(
+                                Modifier
+                                    .matchParentSize()
+                                    .border(
+                                        if (selected == theme) 2.dp else 1.dp,
+                                        if (selected == theme) SageBorder else Color.Transparent,
+                                        RoundedCornerShape(10.dp),
+                                    ),
+                            )
+                        }
                         Text(
                             theme.label,
                             style = MaterialTheme.typography.labelSmall,

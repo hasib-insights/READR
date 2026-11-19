@@ -2,6 +2,7 @@ package com.readr.app.ui.paper
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -158,20 +159,31 @@ private fun PaperGrid(
                         Modifier.weight(1f),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        PaperSurface(
-                            backgroundColor = Color(theme.bg),
-                            textColor = Color(theme.text),
-                            intensity = intensity,
-                            modifier = Modifier
+                        Box(
+                            Modifier
                                 .fillMaxWidth()
                                 .height(84.dp)
-                                .border(
-                                    if (selected == theme) 2.dp else 1.dp,
-                                    if (selected == theme) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                    RoundedCornerShape(12.dp),
-                                ),
                         ) {
-                            PreviewCenteredLabel(theme)
+                            PaperSurface(
+                                backgroundColor = Color(theme.bg),
+                                textColor = Color(theme.text),
+                                intensity = intensity,
+                                modifier = Modifier.fillMaxSize(),
+                                shape = RoundedCornerShape(12.dp),
+                                onClick = { onSelect(theme) },
+                            ) {
+                                PreviewCenteredLabel(theme)
+                            }
+                            // selection outline drawn above the paper so it stays visible
+                            Box(
+                                Modifier
+                                    .matchParentSize()
+                                    .border(
+                                        if (selected == theme) 2.dp else 1.dp,
+                                        if (selected == theme) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                        RoundedCornerShape(12.dp),
+                                    ),
+                            )
                         }
                         Text(
                             theme.label,
