@@ -14,6 +14,7 @@ PDF · EPUB · DOCX · TXT
 [![Language](https://img.shields.io/badge/language-Kotlin-orange)](#)
 [![UI](https://img.shields.io/badge/ui-Jetpack%20Compose-blue)](#)
 [![License](https://img.shields.io/badge/license-Apache%202.0-red)](#)
+[![Release](https://img.shields.io/github/v/release/hasib-insights/READR)](https://github.com/hasib-insights/READR/releases/latest)
 [![Min SDK](https://img.shields.io/badge/minSdk-24-informational)](#)
 
 </div>
@@ -40,13 +41,11 @@ device.
 
 [View all releases](https://github.com/hasib-insights/READR/releases/latest)
 
-Current version: **1.0.0** · Requires Android 7.0 (API 24) or newer.
+Current version: **1.0.2** (released 2026-11-20) · Requires Android 7.0 (API 24) or newer.
 
-
-> The download links above are activated automatically by the release
-> workflow as soon as the first signed APK is published to GitHub Releases
-> (see [docs/PUBLISHING.md](docs/PUBLISHING.md)). Until then, you can build
-> the APK yourself in a few minutes — see [Installation](#installation).
+> Releases are signed with the READR release key. Devices still running the
+> original **1.0.0** build need a one-time uninstall before installing 1.0.1+;
+> 1.0.1 and later update normally over each other.
 
 ## Main features
 
@@ -74,7 +73,7 @@ Current version: **1.0.0** · Requires Android 7.0 (API 24) or newer.
 
 | Format | Engine | Capabilities |
 | --- | --- | --- |
-| PDF | Android `PdfRenderer` | Smooth streamed page rendering, fit-width / whole-page, double-tap & button zoom, pan, page navigation, bookmarks, dark rendering filter |
+| PDF | Android `PdfRenderer` | Smooth streamed page rendering, fit-width / whole-page, pinch zoom in & out (finger-anchored), double-tap & button zoom, pan, page navigation, bookmarks, dark rendering filter |
 | EPUB 2/3 | Built-in EPUB engine | Package/spine parsing, chapter navigation, TOC titles, inline images, adjustable typography & paper |
 | DOCX | Built-in OOXML reader | Paragraphs & headings via outline levels, bold/italic/underline, list items, simple tables |
 | TXT | Built-in chunked loader | Encoding detection (UTF-8/16, GBK, Windows-1252), streamed paragraph loading for large files, full typography controls |
@@ -165,6 +164,17 @@ are welcome:
 
 Good first issues: EPUB CSS-lite styling, PDF text selection, library
 collections, more paper themes.
+
+## Release history
+
+- **1.0.2** (2026-11-20) — Paper Studio paper colour cards now respond to
+  taps; the selection outline is drawn on top of the paper preview; choosing
+  a paper clears any stale Eye Comfort custom colour in the same save.
+  ([notes](docs/RELEASE_NOTES.md))
+- **1.0.1** (2026-11-19) — back navigation fixes (gesture overlap, system
+  back closes reader panels, guarded exit), custom page colours auto-pick a
+  readable text colour (WCAG contrast ≥ 3:1), PDF pinch zoom out.
+- **1.0.0** (2026-11-15) — first public release.
 
 ## License
 

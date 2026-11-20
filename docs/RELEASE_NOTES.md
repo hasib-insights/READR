@@ -1,3 +1,32 @@
+# READR 1.0.2 — bug-fix release
+
+One fix, no new features and no design changes.
+
+## Paper selection fixed (Paper Studio & Reading Room)
+- The paper colour cards in **Paper Studio** — and in the reader's Paper
+  Studio sheet — did not respond to taps at all: the tap handler was never
+  connected to the paper previews, so every card looked like a button but
+  behaved as a static picture. Tapping a paper now applies it immediately:
+  the live preview recolours, the selection outline moves, and the choice is
+  saved across pages and sessions.
+- Selecting a paper also clears any custom page colour picked earlier in Eye
+  Comfort (in the same atomic save), so a stale custom colour can no longer
+  silently override the paper you just tapped.
+- The selection outline is now drawn **on top of** the paper preview instead
+  of underneath it, so the selected paper is always clearly highlighted.
+
+The texture-intensity chips, font chips and all other Paper Studio controls
+were already working and are unchanged.
+
+## Files
+
+- `READR.apk` — signed release APK (Android 7.0+). Signed with the same
+  release key as 1.0.1, so it installs as a normal update (only 1.0.0 needs
+  a one-time uninstall first).
+- `READR.apk.sha256` — checksum to verify your download
+
+---
+
 # READR 1.0.1 — bug-fix release
 
 Three fixes, no new features and no design changes:
